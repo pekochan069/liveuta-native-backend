@@ -79,6 +79,29 @@ export function getChannelById(channelId: string) {
 	});
 }
 
+export function getAllChannels() {
+	return Effect.gen(function* (_) {
+		const mongoDB = yield* MongoDB;
+
+		const channels = yield* mongoDB.use((client) => {
+			return client
+				.db(MONGODB_MANAGEMENT_DB)
+				.collection(MONGODB_CHANNEL_COLLECTION)
+				.find<ChannelDocument>(
+					{
+						waiting: false,
+					},
+					{
+						projection: { _id: 0 },
+					}
+				)
+				.toArray();
+		});
+
+		return channels as ChannelDocument[];
+	});
+}
+
 export function getContents() {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;

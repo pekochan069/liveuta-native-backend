@@ -7,42 +7,35 @@ import {
 	HttpApiSwagger,
 	HttpServer,
 } from "@effect/platform";
-import { Config, Effect, Layer, Option, Schema } from "effect";
-import {
-	MongoDB,
-	MongoDBError,
-	getChannelById,
-	mongoDBLayer,
-} from "./lib/mongodb";
-import { ChannelDocument, ChannelDocumentSchema } from "./types/mongo";
+import { Effect, Layer, Schema } from "effect";
+import { getAllChannels, getChannelById, mongoDBLayer } from "./lib/mongodb";
 
 export function createServer(env: Env, useSwagger: boolean) {
 	const mongoDBApi = HttpApi.make("mongoApi")
 		.add(
-			/**
-			 * Get channel information by channel ID
-			 * @swagger
-			 * /channel/get/{id}:
-			 *   get:
-			 *     summary: Get channel by id
-			 *     parameters:
-			 *       - in: path
-			 *         name: id
-			 *         required: true
-			 *         schema:
-			 *           type: string
-			 *     responses:
-			 *       200:
-			 *         description: Channel
-			 *         content: application/json
-			 *			404:
-			 *         description: Channel not found
-			 * 			content: application/json
-			 * 		 500:
-			 */
 			HttpApiGroup.make("channel")
-				.prefix("/channel")
 				.add(
+					/**
+					 * Get channel information by channel ID
+					 * @swagger
+					 * /channel/get/{id}:
+					 *   get:
+					 *     summary: Get channel by id
+					 *     parameters:
+					 *       - in: path
+					 *         name: id
+					 *         required: true
+					 *         schema:
+					 *           type: string
+					 *     responses:
+					 *       200:
+					 *         description: Channel
+					 *         content: application/json
+					 *			404:
+					 *         description: Channel not found
+					 * 			content: application/json
+					 * 		 500:
+					 */
 					HttpApiEndpoint.get("getChannelById", "/get/:id")
 						.setPath(
 							Schema.Struct({
@@ -50,28 +43,38 @@ export function createServer(env: Env, useSwagger: boolean) {
 							})
 						)
 						.addSuccess(Schema.Any)
+						.addError(HttpApiError.InternalServerError)
 						.addError(HttpApiError.NotFound)
+				)
+				.add(
+					HttpApiEndpoint.get("getAllChannels", "/getAll")
+						.addSuccess(Schema.Array(Schema.Any))
 						.addError(HttpApiError.InternalServerError)
 				)
+				.prefix("/channel")
 		)
 		.add(
 			HttpApiGroup.make("content")
-				.prefix("/content")
 				.add(
 					HttpApiEndpoint.get("getContentsAll", "/getAll")
 						.addSuccess(Schema.String)
 						.addError(HttpApiError.NotFound)
 						.addError(HttpApiError.InternalServerError)
 				)
+				.prefix("/content")
 		);
 
 	const channelLive = HttpApiBuilder.group(
 		mongoDBApi,
 		"channel",
 		(handlers) => {
-			return handlers.handle("getChannelById", ({ path: { id } }) => {
-				return getChannelById(id);
-			});
+			return handlers
+				.handle("getChannelById", ({ path: { id } }) => {
+					return getChannelById(id);
+				})
+				.handle("getAllChannels", () => {
+					return getAllChannels();
+				});
 		}
 	);
 	const contentLive = HttpApiBuilder.group(
