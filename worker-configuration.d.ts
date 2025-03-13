@@ -20,4 +20,5 @@ interface Env {
 	MONGODB_URI: string;
 	ORACLEDB_CONNECTSTRING: string;
 	ORACLEDB_PASSWORD: string;
+	RATE_LIMITER: RateLimit;
 }
