@@ -13,14 +13,8 @@
 
 import { createServer } from "./router";
 
-let server: ReturnType<typeof createServer> | undefined;
-
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		if (!server) {
-			server = createServer(env, true);
-		}
-
 		const { pathname } = new URL(request.url);
 
 		const { success } = await env.RATE_LIMITER.limit({ key: pathname });
@@ -31,6 +25,8 @@ export default {
 				{ status: 429 }
 			);
 		}
+
+		const server = createServer(env, true);
 
 		return await server.handler(request);
 	},
