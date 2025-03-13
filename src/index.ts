@@ -11,8 +11,17 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { Config, Effect } from "effect";
+import { createServer } from "./router";
+
+let server: ReturnType<typeof createServer> | undefined;
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		return new Response('Hello World!');
+		if (!server) {
+			server = createServer(env, true);
+		}
+
+		return await server.handler(request);
 	},
 } satisfies ExportedHandler<Env>;
