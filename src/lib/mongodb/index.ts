@@ -1,21 +1,14 @@
 import { HttpApiError } from "@effect/platform";
-import { Config, Context, Data, Effect, Layer, Option } from "effect";
-import {
-	type Document,
-	MongoClient,
-	type MongoClientOptions,
-	type WithId,
-} from "mongodb";
+import { Context, Data, Effect, Layer } from "effect";
+import { MongoClient, type MongoClientOptions } from "mongodb";
 import {
 	MONGODB_CHANNEL_COLLECTION,
 	MONGODB_MANAGEMENT_DB,
 } from "../../constants";
-import type { ChannelDocument } from "../../types/mongo";
-
-export class MongoDBError extends Data.TaggedError("MongoDBError")<{
-	cause?: unknown;
-	message?: string;
-}> {}
+import type { ChannelData, ChannelDocument } from "../../types/mongo";
+import type { ChannelSort } from "../../types/mongo";
+import { addEscapeCharacter } from "../utils";
+import { combineChannelData } from "../youtube";
 
 type MongoDBImpl = {
 	use: <T>(
@@ -99,6 +92,68 @@ export function getAllChannels() {
 		});
 
 		return channels as ChannelDocument[];
+	});
+}
+
+export function getChannelsWithYoutubeData(
+	sort: ChannelSort,
+	size: number,
+	page: number,
+	query: string | undefined
+) {
+	return Effect.gen(function* (_) {
+		const mongoDB = yield* MongoDB;
+
+		const direction = sort === "createdAt" ? -1 : 1;
+		const safeQuery = addEscapeCharacter((query || "").trim());
+		const regexForDBQuery = {
+			names: {
+				$regex: safeQuery,
+				$options: "i",
+			},
+			waiting: false,
+		};
+		const skip = (page - 1) * size;
+
+		const channels = yield* mongoDB.use((client) => {
+			return client
+				.db(MONGODB_MANAGEMENT_DB)
+				.collection(MONGODB_CHANNEL_COLLECTION)
+				.find<ChannelDocument>(
+					query ? regexForDBQuery : { waiting: false },
+					{ projection: { _id: 0 } }
+				)
+				.sort(sort, direction)
+				.skip(skip)
+				.limit(size)
+				.toArray();
+		});
+
+		const total = yield* mongoDB.use((client) => {
+			return client
+				.db(MONGODB_MANAGEMENT_DB)
+				.collection(MONGODB_CHANNEL_COLLECTION)
+				.countDocuments(query ? regexForDBQuery : { waiting: false });
+		});
+		const totalPage = Math.ceil(total / size);
+
+		const channelRecord = channels.reduce<Record<string, ChannelData>>(
+			(acc, current) => {
+				acc[current.channel_id] = { ...current };
+				return acc;
+			},
+			{}
+		);
+
+		const combinedChannelContents = yield* _(
+			combineChannelData(channelRecord, { sort })
+		);
+
+		return {
+			contents: combinedChannelContents,
+			total,
+			totalPage,
+		};
 	});
 }
 

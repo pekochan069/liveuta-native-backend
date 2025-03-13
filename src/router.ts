@@ -8,33 +8,24 @@ import {
 	HttpServer,
 } from "@effect/platform";
 import { Effect, Layer, Schema } from "effect";
-import { getAllChannels, getChannelById, mongoDBLayer } from "./lib/mongodb";
+import {
+	getAllChannels,
+	getChannelById,
+	getChannelsWithYoutubeData,
+	mongoDBLayer,
+} from "./lib/mongodb";
+import { youtubeLayer } from "./lib/youtube";
+import { ChannelSortSchema } from "./types/mongo";
 
 export function createServer(env: Env, useSwagger: boolean) {
-	const mongoDBApi = HttpApi.make("mongoApi")
+	const dataApi = HttpApi.make("dataApi")
 		.add(
 			HttpApiGroup.make("channel")
 				.add(
 					/**
 					 * Get channel information by channel ID
 					 * @swagger
-					 * /channel/get/{id}:
-					 *   get:
-					 *     summary: Get channel by id
-					 *     parameters:
-					 *       - in: path
-					 *         name: id
-					 *         required: true
-					 *         schema:
-					 *           type: string
-					 *     responses:
-					 *       200:
-					 *         description: Channel
-					 *         content: application/json
-					 *			404:
-					 *         description: Channel not found
-					 * 			content: application/json
-					 * 		 500:
+					 * /channel/get/{id}
 					 */
 					HttpApiEndpoint.get("getChannelById", "/get/:id")
 						.setPath(
@@ -47,8 +38,34 @@ export function createServer(env: Env, useSwagger: boolean) {
 						.addError(HttpApiError.NotFound)
 				)
 				.add(
+					/**
+					 * Get all channels
+					 * @swagger
+					 * /channel/getAll
+					 */
 					HttpApiEndpoint.get("getAllChannels", "/getAll")
 						.addSuccess(Schema.Array(Schema.Any))
+						.addError(HttpApiError.InternalServerError)
+				)
+				.add(
+					/**
+					 * Get channels with YouTube data
+					 * @swagger
+					 * /channel/getYoutube
+					 */
+					HttpApiEndpoint.get(
+						"getChannelsWithYoutubeData",
+						"/getYoutube"
+					)
+						.setUrlParams(
+							Schema.Struct({
+								sort: ChannelSortSchema,
+								size: Schema.NumberFromString,
+								page: Schema.NumberFromString,
+								query: Schema.UndefinedOr(Schema.String),
+							})
+						)
+						.addSuccess(Schema.Any)
 						.addError(HttpApiError.InternalServerError)
 				)
 				.prefix("/channel")
@@ -64,42 +81,39 @@ export function createServer(env: Env, useSwagger: boolean) {
 				.prefix("/content")
 		);
 
-	const channelLive = HttpApiBuilder.group(
-		mongoDBApi,
-		"channel",
-		(handlers) => {
-			return handlers
-				.handle("getChannelById", ({ path: { id } }) => {
-					return getChannelById(id);
-				})
-				.handle("getAllChannels", () => {
-					return getAllChannels();
-				});
-		}
-	);
-	const contentLive = HttpApiBuilder.group(
-		mongoDBApi,
-		"content",
-		(handlers) => {
-			return handlers.handle("getContentsAll", () =>
-				Effect.succeed("Hello")
+	const channelLive = HttpApiBuilder.group(dataApi, "channel", (handlers) => {
+		return handlers
+			.handle("getChannelById", ({ path: { id } }) => {
+				return getChannelById(id);
+			})
+			.handle("getAllChannels", () => {
+				return getAllChannels();
+			})
+			.handle(
+				"getChannelsWithYoutubeData",
+				({ urlParams: { sort, size, page, query } }) => {
+					return getChannelsWithYoutubeData(sort, size, page, query);
+				}
 			);
-		}
-	);
+	});
+	const contentLive = HttpApiBuilder.group(dataApi, "content", (handlers) => {
+		return handlers.handle("getContentsAll", () => Effect.succeed("Hello"));
+	});
 
-	const mongoDBApiLive = HttpApiBuilder.api(mongoDBApi).pipe(
+	const dataApiLive = HttpApiBuilder.api(dataApi).pipe(
 		Layer.provide(channelLive),
 		Layer.provide(contentLive),
-		Layer.provide(mongoDBLayer(env.MONGODB_URI))
+		Layer.provide(mongoDBLayer(env.MONGODB_URI)),
+		Layer.provide(youtubeLayer(env.GOOGLE_API_KEY))
 	);
 
 	const mergedLayers = useSwagger
 		? Layer.mergeAll(
-				mongoDBApiLive,
-				HttpApiSwagger.layer().pipe(Layer.provide(mongoDBApiLive)),
+				dataApiLive,
+				HttpApiSwagger.layer().pipe(Layer.provide(dataApiLive)),
 				HttpServer.layerContext
 		  )
-		: Layer.mergeAll(mongoDBApiLive, HttpServer.layerContext);
+		: Layer.mergeAll(dataApiLive, HttpServer.layerContext);
 
 	const serverLive = HttpApiBuilder.toWebHandler(mergedLayers);
 
