@@ -1,12 +1,20 @@
 import { HttpApiError } from "@effect/platform";
-import { Context, Data, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { MongoClient, type MongoClientOptions } from "mongodb";
 import {
 	MONGODB_CHANNEL_COLLECTION,
 	MONGODB_MANAGEMENT_DB,
+	MONGODB_SCHEDULE_COLLECTION,
+	MONGODB_SCHEDULE_DB,
 } from "../../constants";
-import type { ChannelData, ChannelDocument } from "../../types/mongo";
-import type { ChannelSort } from "../../types/mongo";
+import type {
+	ChannelData,
+	ChannelDocument,
+	Schedule,
+	ScheduleDocument,
+} from "../../types/mongodb";
+import type { ChannelSort } from "../../types/mongodb";
+import dayjs from "../dayjs";
 import { addEscapeCharacter } from "../utils";
 import { combineChannelData } from "../youtube";
 
@@ -157,9 +165,36 @@ export function getChannelsWithYoutubeData(
 	});
 }
 
-export function getContents() {
+export function getSchedule() {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;
-		const contents = yield* mongoDB.use((client) => {});
+		const contents = yield* mongoDB.use((client) => {
+			return client
+				.db(MONGODB_SCHEDULE_DB)
+				.collection(MONGODB_SCHEDULE_COLLECTION)
+				.find<ScheduleDocument>(
+					{},
+					{
+						projection: { _id: 0 },
+					}
+				)
+				.sort({ ScheduledTime: 1, ChannelName: 1 })
+				.toArray();
+		});
+
+		return contents.map((content) => ({
+			_id: content._id,
+			title: content.Title,
+			url: content.URL,
+			channelName: content.ChannelName,
+			scheduledTime: dayjs(content.ScheduledTime).toDate(),
+			broadcastStatus: content?.broadcastStatus === "TRUE",
+			hide: content.Hide === "TRUE",
+			isVideo: content.isVideo === "TRUE",
+			concurrentViewers: content.concurrentViewers,
+			videoId: content.VideoId,
+			channelId: content.ChannelId,
+			tag: content.tag,
+		})) as Schedule[];
 	});
 }

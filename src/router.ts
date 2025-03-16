@@ -7,15 +7,16 @@ import {
 	HttpApiSwagger,
 	HttpServer,
 } from "@effect/platform";
-import { Effect, Layer, Schema } from "effect";
+import { Layer, Schema } from "effect";
 import {
 	getAllChannels,
 	getChannelById,
 	getChannelsWithYoutubeData,
+	getSchedule,
 	mongoDBLayer,
 } from "./lib/mongodb";
 import { youtubeLayer } from "./lib/youtube";
-import { ChannelSortSchema } from "./types/mongo";
+import { ChannelSortSchema } from "./types/mongodb";
 
 export function createServer(env: Env, useSwagger: boolean) {
 	const dataApi = HttpApi.make("dataApi")
@@ -71,38 +72,32 @@ export function createServer(env: Env, useSwagger: boolean) {
 				.prefix("/channel")
 		)
 		.add(
-			HttpApiGroup.make("content")
+			HttpApiGroup.make("schedule")
 				.add(
-					HttpApiEndpoint.get("getContentsAll", "/getAll")
-						.addSuccess(Schema.String)
-						.addError(HttpApiError.NotFound)
+					HttpApiEndpoint.get("getSchedule", "/get")
+						.addSuccess(Schema.Array(Schema.Any))
 						.addError(HttpApiError.InternalServerError)
 				)
-				.prefix("/content")
+				.prefix("/schedule")
 		);
 
-	const channelLive = HttpApiBuilder.group(dataApi, "channel", (handlers) => {
-		return handlers
-			.handle("getChannelById", ({ path: { id } }) => {
-				return getChannelById(id);
-			})
-			.handle("getAllChannels", () => {
-				return getAllChannels();
-			})
+	const channelLive = HttpApiBuilder.group(dataApi, "channel", (handlers) =>
+		handlers
+			.handle("getChannelById", ({ path: { id } }) => getChannelById(id))
+			.handle("getAllChannels", () => getAllChannels())
 			.handle(
 				"getChannelsWithYoutubeData",
-				({ urlParams: { sort, size, page, query } }) => {
-					return getChannelsWithYoutubeData(sort, size, page, query);
-				}
-			);
-	});
-	const contentLive = HttpApiBuilder.group(dataApi, "content", (handlers) => {
-		return handlers.handle("getContentsAll", () => Effect.succeed("Hello"));
-	});
+				({ urlParams: { sort, size, page, query } }) =>
+					getChannelsWithYoutubeData(sort, size, page, query)
+			)
+	);
+	const scheduleLive = HttpApiBuilder.group(dataApi, "schedule", (handlers) =>
+		handlers.handle("getSchedule", () => getSchedule())
+	);
 
 	const dataApiLive = HttpApiBuilder.api(dataApi).pipe(
 		Layer.provide(channelLive),
-		Layer.provide(contentLive),
+		Layer.provide(scheduleLive),
 		Layer.provide(mongoDBLayer(env.MONGODB_URI)),
 		Layer.provide(youtubeLayer(env.GOOGLE_API_KEY))
 	);
@@ -118,6 +113,4 @@ export function createServer(env: Env, useSwagger: boolean) {
 	const serverLive = HttpApiBuilder.toWebHandler(mergedLayers);
 
 	return serverLive;
-
-	// const catchAll = HttpApiEndpoint.get("catchAll")`*`;
 }

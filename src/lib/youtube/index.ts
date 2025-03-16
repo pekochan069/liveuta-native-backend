@@ -5,7 +5,7 @@ import type {
 	ChannelData,
 	ChannelListData,
 	ChannelSort,
-} from "../../types/mongo";
+} from "../../types/mongodb";
 import type { YoutubeChannelData } from "../../types/youtube";
 import dayjs from "../dayjs";
 import { generateChannelUrl } from "../utils";
