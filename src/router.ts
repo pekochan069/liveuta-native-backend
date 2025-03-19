@@ -16,7 +16,7 @@ import {
 	mongoDBLayer,
 } from "./lib/mongodb";
 import { youtubeLayer } from "./lib/youtube";
-import { ChannelSortSchema } from "./types/mongodb";
+import { ChannelSortSchema, ScheduleSchema } from "./types/mongodb";
 
 export function createServer(env: Env, useSwagger: boolean) {
 	const dataApi = HttpApi.make("dataApi")
@@ -75,7 +75,7 @@ export function createServer(env: Env, useSwagger: boolean) {
 			HttpApiGroup.make("schedule")
 				.add(
 					HttpApiEndpoint.get("getSchedule", "/get")
-						.addSuccess(Schema.Array(Schema.Any))
+						.addSuccess(Schema.Array(ScheduleSchema))
 						.addError(HttpApiError.InternalServerError)
 				)
 				.prefix("/schedule")

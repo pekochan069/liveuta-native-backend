@@ -40,23 +40,22 @@ export type ChannelsWithYoutubeData = {
 export const ScheduleDocumentSchema = Schema.Struct({
 	_id: Schema.UndefinedOr(Schema.String),
 	Title: Schema.String,
-	URL: Schema.String,
+	URL: Schema.UndefinedOr(Schema.String),
 	ChannelName: Schema.String,
 	ScheduledTime: Schema.Date,
 	broadcastStatus: Schema.Literal("TRUE", "NULL", "FALSE"),
 	Hide: Schema.Literal("TRUE", "FALSE"),
 	isVideo: Schema.Literal("TRUE", "FALSE"),
-	concurrentViewers: Schema.Number,
+	concurrentViewers: Schema.Union(Schema.Number, Schema.String),
 	VideoId: Schema.String,
 	ChannelId: Schema.String,
-	tag: Schema.String,
+	tag: Schema.UndefinedOr(Schema.String),
 });
 export type ScheduleDocument = typeof ScheduleDocumentSchema.Type;
 
 export const ScheduleSchema = Schema.Struct({
-	_id: Schema.UndefinedOr(Schema.String),
 	title: Schema.String,
-	url: Schema.String,
+	url: Schema.UndefinedOr(Schema.String),
 	channelName: Schema.String,
 	scheduledTime: Schema.Date,
 	broadcastStatus: Schema.UndefinedOr(Schema.Boolean),
@@ -65,6 +64,6 @@ export const ScheduleSchema = Schema.Struct({
 	concurrentViewers: Schema.Number,
 	videoId: Schema.String,
 	channelId: Schema.String,
-	tag: Schema.String,
+	tag: Schema.UndefinedOr(Schema.String),
 });
 export type Schedule = typeof ScheduleSchema.Type;
