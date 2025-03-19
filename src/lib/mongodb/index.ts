@@ -191,10 +191,7 @@ export function getSchedule() {
 			broadcastStatus: content?.broadcastStatus === "TRUE",
 			hide: content.Hide === "TRUE",
 			isVideo: content.isVideo === "TRUE",
-			concurrentViewers:
-				typeof content.concurrentViewers === "string"
-					? Number.parseInt(content.concurrentViewers)
-					: content.concurrentViewers,
+			concurrentViewers: content.concurrentViewers,
 			videoId: content.VideoId,
 			channelId: content.ChannelId,
 			tag: content.tag,
