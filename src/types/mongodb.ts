@@ -40,7 +40,6 @@ export type ChannelsWithYoutubeData = {
 export const ScheduleDocumentSchema = Schema.Struct({
 	_id: Schema.UndefinedOr(Schema.String),
 	Title: Schema.String,
-	URL: Schema.UndefinedOr(Schema.String),
 	ChannelName: Schema.String,
 	ScheduledTime: Schema.Date,
 	broadcastStatus: Schema.Literal("TRUE", "NULL", "FALSE"),
@@ -55,7 +54,6 @@ export type ScheduleDocument = typeof ScheduleDocumentSchema.Type;
 
 export const ScheduleSchema = Schema.Struct({
 	title: Schema.String,
-	url: Schema.UndefinedOr(Schema.String),
 	channelName: Schema.String,
 	scheduledTime: Schema.Date,
 	broadcastStatus: Schema.UndefinedOr(Schema.Boolean),
