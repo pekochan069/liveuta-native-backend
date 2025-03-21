@@ -11,7 +11,7 @@ export const STAT_MAPPER = {
 
 export const ChannelSortSchema = Schema.Union(
 	Schema.Literal("createdAt"),
-	Schema.Literal("name_kor"),
+	Schema.Literal("name_kor")
 );
 export type ChannelSort = typeof ChannelSortSchema.Type;
 
@@ -56,12 +56,12 @@ export const ScheduleSchema = Schema.Struct({
 	title: Schema.String,
 	channelName: Schema.String,
 	scheduledTime: Schema.Date,
-	broadcastStatus: Schema.UndefinedOr(Schema.Boolean),
+	broadcastStatus: Schema.Boolean,
 	hide: Schema.Boolean,
 	isVideo: Schema.Boolean,
 	concurrentViewers: Schema.Number,
 	videoId: Schema.String,
 	channelId: Schema.String,
-	tag: Schema.UndefinedOr(Schema.String),
+	tag: Schema.String,
 });
 export type Schedule = typeof ScheduleSchema.Type;

@@ -194,13 +194,16 @@ export function getSchedule() {
 				title: content.Title ?? "",
 				channelName: content.ChannelName ?? "",
 				scheduledTime: dayjs(content.ScheduledTime).toDate(),
-				broadcastStatus: content?.broadcastStatus === "TRUE",
+				broadcastStatus:
+					content.broadcastStatus !== undefined
+						? content.broadcastStatus === "TRUE"
+						: false,
 				hide: content.Hide === "TRUE",
 				isVideo: content.isVideo === "TRUE",
 				concurrentViewers: viewers < 0 ? 0 : viewers,
 				videoId: content.VideoId,
 				channelId: content.ChannelId,
-				tag: content.tag,
+				tag: content.tag ?? "",
 			} as Schedule;
 		});
 	});
