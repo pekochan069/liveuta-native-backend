@@ -7,7 +7,12 @@ import {
 	MONGODB_SCHEDULE_COLLECTION,
 	MONGODB_SCHEDULE_DB,
 } from "../../constants";
-import type { ChannelData, ChannelDocument, Schedule, ScheduleDocument } from "../../types/mongodb";
+import type {
+	ChannelData,
+	ChannelDocument,
+	Schedule,
+	ScheduleDocument,
+} from "../../types/mongodb";
 import type { ChannelSort } from "../../types/mongodb";
 import dayjs from "../dayjs";
 import { addEscapeCharacter } from "../utils";
@@ -15,7 +20,7 @@ import { combineChannelData } from "../youtube";
 
 type MongoDBImpl = {
 	use: <T>(
-		fn: (client: MongoClient) => T,
+		fn: (client: MongoClient) => T
 	) => Effect.Effect<Awaited<T>, HttpApiError.InternalServerError, never>;
 };
 
@@ -28,7 +33,7 @@ export function make(uri: string, options?: MongoClientOptions) {
 				try: () => new MongoClient(uri, options).connect(),
 				catch: (_) => new HttpApiError.InternalServerError(),
 			}),
-			(client) => Effect.promise(() => client.close()),
+			(client) => Effect.promise(() => client.close())
 		);
 		return MongoDB.of({
 			use: (fn) =>
@@ -40,7 +45,8 @@ export function make(uri: string, options?: MongoClientOptions) {
 					if (result instanceof Promise) {
 						return yield* Effect.tryPromise({
 							try: () => result,
-							catch: (_) => new HttpApiError.InternalServerError(),
+							catch: (_) =>
+								new HttpApiError.InternalServerError(),
 						});
 					}
 
@@ -88,7 +94,7 @@ export function getAllChannels() {
 					},
 					{
 						projection: { _id: 0 },
-					},
+					}
 				)
 				.toArray();
 		});
@@ -101,7 +107,7 @@ export function getChannelsWithYoutubeData(
 	sort: ChannelSort,
 	size: number,
 	page: number,
-	query: string | undefined,
+	query: string | undefined
 ) {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;
@@ -121,9 +127,12 @@ export function getChannelsWithYoutubeData(
 			return client
 				.db(MONGODB_MANAGEMENT_DB)
 				.collection(MONGODB_CHANNEL_COLLECTION)
-				.find<ChannelDocument>(query ? regexForDBQuery : { waiting: false }, {
-					projection: { _id: 0 },
-				})
+				.find<ChannelDocument>(
+					query ? regexForDBQuery : { waiting: false },
+					{
+						projection: { _id: 0 },
+					}
+				)
 				.sort(sort, direction)
 				.skip(skip)
 				.limit(size)
@@ -138,12 +147,17 @@ export function getChannelsWithYoutubeData(
 		});
 		const totalPage = Math.ceil(total / size);
 
-		const channelRecord = channels.reduce<Record<string, ChannelData>>((acc, current) => {
-			acc[current.channel_id] = { ...current };
-			return acc;
-		}, {});
+		const channelRecord = channels.reduce<Record<string, ChannelData>>(
+			(acc, current) => {
+				acc[current.channel_id] = { ...current };
+				return acc;
+			},
+			{}
+		);
 
-		const combinedChannelContents = yield* _(combineChannelData(channelRecord, { sort }));
+		const combinedChannelContents = yield* _(
+			combineChannelData(channelRecord, { sort })
+		);
 
 		return {
 			contents: combinedChannelContents,
@@ -164,23 +178,30 @@ export function getSchedule() {
 					{},
 					{
 						projection: { _id: 0 },
-					},
+					}
 				)
 				.sort({ ScheduledTime: 1, ChannelName: 1 })
 				.toArray();
 		});
 
-		return contents.map((content) => ({
-			title: content.Title ?? "",
-			channelName: content.ChannelName ?? "",
-			scheduledTime: dayjs(content.ScheduledTime).toDate(),
-			broadcastStatus: content?.broadcastStatus === "TRUE",
-			hide: content.Hide === "TRUE",
-			isVideo: content.isVideo === "TRUE",
-			concurrentViewers: content.concurrentViewers < 0 ? 0 : content.concurrentViewers,
-			videoId: content.VideoId,
-			channelId: content.ChannelId,
-			tag: content.tag,
-		})) as Schedule[];
+		return contents.map((content) => {
+			const viewers =
+				typeof content.concurrentViewers === "string"
+					? Number(content.concurrentViewers)
+					: content.concurrentViewers;
+
+			return {
+				title: content.Title ?? "",
+				channelName: content.ChannelName ?? "",
+				scheduledTime: dayjs(content.ScheduledTime).toDate(),
+				broadcastStatus: content?.broadcastStatus === "TRUE",
+				hide: content.Hide === "TRUE",
+				isVideo: content.isVideo === "TRUE",
+				concurrentViewers: viewers < 0 ? 0 : viewers,
+				videoId: content.VideoId,
+				channelId: content.ChannelId,
+				tag: content.tag,
+			} as Schedule;
+		});
 	});
 }
