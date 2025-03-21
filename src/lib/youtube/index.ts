@@ -1,11 +1,7 @@
 import { HttpApiError } from "@effect/platform";
 import { Context, Effect, Layer } from "effect";
 import { google } from "googleapis";
-import type {
-	ChannelData,
-	ChannelListData,
-	ChannelSort,
-} from "../../types/mongodb";
+import type { ChannelData, ChannelListData, ChannelSort } from "../../types/mongodb";
 import type { YoutubeChannelData } from "../../types/youtube";
 import dayjs from "../dayjs";
 import { generateChannelUrl } from "../utils";
@@ -14,7 +10,7 @@ type YoutubeClient = ReturnType<typeof google.youtube>;
 
 type YoutubeImpl = {
 	use: <T>(
-		fn: (client: YoutubeClient, apiKey: string) => T
+		fn: (client: YoutubeClient, apiKey: string) => T,
 	) => Effect.Effect<Awaited<T>, HttpApiError.InternalServerError, never>;
 };
 
@@ -41,8 +37,7 @@ export function make(apiKey: string) {
 					if (result instanceof Promise) {
 						return yield* Effect.tryPromise({
 							try: () => result,
-							catch: (_) =>
-								new HttpApiError.InternalServerError(),
+							catch: (_) => new HttpApiError.InternalServerError(),
 						});
 					}
 
@@ -74,7 +69,7 @@ export const getYoutubeChannels = (idArr: string[]) => {
 					part: ["id", "snippet", "statistics"],
 					key: apiKey,
 				},
-				{ fetchImplementation: fetcher }
+				{ fetchImplementation: fetcher },
 			);
 		});
 
@@ -88,7 +83,7 @@ type CombineChannelDataOptions = {
 
 export function combineChannelData(
 	mongoDBData: ChannelListData,
-	options: CombineChannelDataOptions
+	options: CombineChannelDataOptions,
 ) {
 	return Effect.gen(function* (_) {
 		const idArr = Object.keys(mongoDBData);
@@ -103,30 +98,31 @@ export function combineChannelData(
 			return [];
 		}
 
-		const combinedSearchData = youtubeData.items.reduce<
-			YoutubeChannelData[]
-		>((acc, current) => {
-			const id = current.id;
+		const combinedSearchData = youtubeData.items.reduce<YoutubeChannelData[]>(
+			(acc, current) => {
+				const id = current.id;
 
-			if (!(id && mongoDBData[id])) {
+				if (!(id && mongoDBData[id])) {
+					return acc;
+				}
+
+				const { channel_id, name_kor, createdAt, alive } = mongoDBData[id];
+
+				const youtubeChannelUrl = generateChannelUrl(channel_id);
+
+				acc.push({
+					...current,
+					uid: channel_id,
+					nameKor: name_kor,
+					createdAt,
+					url: youtubeChannelUrl,
+					alive,
+				});
+
 				return acc;
-			}
-
-			const { channel_id, name_kor, createdAt, alive } = mongoDBData[id];
-
-			const youtubeChannelUrl = generateChannelUrl(channel_id);
-
-			acc.push({
-				...current,
-				uid: channel_id,
-				nameKor: name_kor,
-				createdAt,
-				url: youtubeChannelUrl,
-				alive,
-			});
-
-			return acc;
-		}, []);
+			},
+			[],
+		);
 
 		const sortedChannelData = combinedSearchData.sort((a, b) => {
 			if (options?.sort === "createdAt") {
