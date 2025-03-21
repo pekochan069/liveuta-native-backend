@@ -59,7 +59,7 @@ export const ScheduleSchema = Schema.Struct({
 	broadcastStatus: Schema.UndefinedOr(Schema.Boolean),
 	hide: Schema.Boolean,
 	isVideo: Schema.Boolean,
-	concurrentViewers: Schema.Union(Schema.String, Schema.Number),
+	concurrentViewers: Schema.Number,
 	videoId: Schema.String,
 	channelId: Schema.String,
 	tag: Schema.UndefinedOr(Schema.String),

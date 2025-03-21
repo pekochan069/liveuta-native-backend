@@ -183,15 +183,14 @@ export function getSchedule() {
 		});
 
 		return contents.map((content) => ({
-			_id: content._id,
-			title: content.Title,
-			url: content.URL,
-			channelName: content.ChannelName,
+			title: content.Title ?? "",
+			channelName: content.ChannelName ?? "",
 			scheduledTime: dayjs(content.ScheduledTime).toDate(),
 			broadcastStatus: content?.broadcastStatus === "TRUE",
 			hide: content.Hide === "TRUE",
 			isVideo: content.isVideo === "TRUE",
-			concurrentViewers: content.concurrentViewers,
+			concurrentViewers:
+				content.concurrentViewers < 0 ? 0 : content.concurrentViewers,
 			videoId: content.VideoId,
 			channelId: content.ChannelId,
 			tag: content.tag,
