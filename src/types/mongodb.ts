@@ -27,9 +27,20 @@ export const ChannelDocumentSchema = Schema.Struct({
 	alive: Schema.Boolean,
 });
 
+export const ChannelSchema = Schema.Struct({
+	channelId: Schema.String,
+	nameKor: Schema.String,
+	names: Schema.Array(Schema.String),
+	channelAddr: Schema.String,
+	handleName: Schema.String,
+	createdAt: Schema.String,
+	waiting: Schema.Boolean,
+	alive: Schema.Boolean,
+});
+
 export type ChannelDocument = typeof ChannelDocumentSchema.Type;
-export type ChannelData = Omit<ChannelDocument, "_id">;
-export type ChannelListData = Record<string, ChannelData>;
+export type Channel = typeof ChannelSchema.Type;
+export type ChannelListData = Record<string, Channel>;
 
 export type ChannelsWithYoutubeData = {
 	contents: YoutubeChannelData[];

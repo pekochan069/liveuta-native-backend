@@ -8,7 +8,7 @@ import {
 	MONGODB_SCHEDULE_DB,
 } from "../../constants";
 import type {
-	ChannelData,
+	Channel,
 	ChannelDocument,
 	Schedule,
 	ScheduleDocument,
@@ -63,20 +63,36 @@ export function mongoDBLayer(uri: string, options?: MongoClientOptions) {
 export function getChannelById(channelId: string) {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;
-		const channel = yield* mongoDB.use((client) => {
-			return client
-				.db(MONGODB_MANAGEMENT_DB)
-				.collection(MONGODB_CHANNEL_COLLECTION)
-				.findOne<ChannelDocument>({
-					channel_id: channelId,
-				});
-		});
+		const channel: Channel | null = yield* mongoDB
+			.use((client) => {
+				return client
+					.db(MONGODB_MANAGEMENT_DB)
+					.collection(MONGODB_CHANNEL_COLLECTION)
+					.findOne<ChannelDocument>({
+						channel_id: channelId,
+					});
+			})
+			.pipe(
+				Effect.map(
+					(channel) =>
+						channel && {
+							channelId: channel.channel_id,
+							nameKor: channel.name_kor,
+							names: channel.names,
+							channelAddr: channel.channel_addr,
+							handleName: channel.handle_name,
+							createdAt: channel.createdAt,
+							waiting: channel.waiting,
+							alive: channel.alive,
+						}
+				)
+			);
 
 		if (!channel) {
 			yield* Effect.fail(new HttpApiError.NotFound());
 		}
 
-		return channel as ChannelDocument;
+		return channel;
 	});
 }
 
@@ -84,22 +100,37 @@ export function getAllChannels() {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;
 
-		const channels = yield* mongoDB.use((client) => {
-			return client
-				.db(MONGODB_MANAGEMENT_DB)
-				.collection(MONGODB_CHANNEL_COLLECTION)
-				.find<ChannelDocument>(
-					{
-						waiting: false,
-					},
-					{
-						projection: { _id: 0 },
-					}
+		const channels: Channel[] = yield* mongoDB
+			.use((client) => {
+				return client
+					.db(MONGODB_MANAGEMENT_DB)
+					.collection(MONGODB_CHANNEL_COLLECTION)
+					.find<ChannelDocument>(
+						{
+							waiting: false,
+						},
+						{
+							projection: { _id: 0 },
+						}
+					)
+					.toArray();
+			})
+			.pipe(
+				Effect.map((channels) =>
+					channels.map((channel) => ({
+						channelId: channel.channel_id,
+						nameKor: channel.name_kor,
+						names: channel.names,
+						channelAddr: channel.channel_addr,
+						handleName: channel.handle_name,
+						createdAt: channel.createdAt,
+						waiting: channel.waiting,
+						alive: channel.alive,
+					}))
 				)
-				.toArray();
-		});
+			);
 
-		return channels as ChannelDocument[];
+		return channels;
 	});
 }
 
@@ -123,21 +154,36 @@ export function getChannelsWithYoutubeData(
 		};
 		const skip = (page - 1) * size;
 
-		const channels = yield* mongoDB.use((client) => {
-			return client
-				.db(MONGODB_MANAGEMENT_DB)
-				.collection(MONGODB_CHANNEL_COLLECTION)
-				.find<ChannelDocument>(
-					query ? regexForDBQuery : { waiting: false },
-					{
-						projection: { _id: 0 },
-					}
+		const channels: Channel[] = yield* mongoDB
+			.use((client) => {
+				return client
+					.db(MONGODB_MANAGEMENT_DB)
+					.collection(MONGODB_CHANNEL_COLLECTION)
+					.find<ChannelDocument>(
+						query ? regexForDBQuery : { waiting: false },
+						{
+							projection: { _id: 0 },
+						}
+					)
+					.sort(sort, direction)
+					.skip(skip)
+					.limit(size)
+					.toArray();
+			})
+			.pipe(
+				Effect.map((channels) =>
+					channels.map((channel) => ({
+						channelId: channel.channel_id,
+						nameKor: channel.name_kor,
+						names: channel.names,
+						channelAddr: channel.channel_addr,
+						handleName: channel.handle_name,
+						createdAt: channel.createdAt,
+						waiting: channel.waiting,
+						alive: channel.alive,
+					}))
 				)
-				.sort(sort, direction)
-				.skip(skip)
-				.limit(size)
-				.toArray();
-		});
+			);
 
 		const total = yield* mongoDB.use((client) => {
 			return client
@@ -147,9 +193,9 @@ export function getChannelsWithYoutubeData(
 		});
 		const totalPage = Math.ceil(total / size);
 
-		const channelRecord = channels.reduce<Record<string, ChannelData>>(
+		const channelRecord = channels.reduce<Record<string, Channel>>(
 			(acc, current) => {
-				acc[current.channel_id] = { ...current };
+				acc[current.channelId] = { ...current };
 				return acc;
 			},
 			{}
