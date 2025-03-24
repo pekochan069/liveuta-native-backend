@@ -74,5 +74,12 @@ export const ScheduleSchema = Schema.Struct({
 	videoId: Schema.String,
 	channelId: Schema.String,
 	tag: Schema.UndefinedOr(Schema.String),
+	type: Schema.Literal(
+		"video",
+		"scheduled-video",
+		"stream",
+		"ended-stream",
+		"scheduled-stream"
+	),
 });
 export type Schedule = typeof ScheduleSchema.Type;

@@ -230,23 +230,40 @@ export function getSchedule() {
 				.toArray();
 		});
 
+		const now = dayjs();
+
 		return contents.map((content) => {
 			const viewers =
 				typeof content.concurrentViewers === "string"
 					? Number(content.concurrentViewers)
 					: content.concurrentViewers;
 
+			const scheduleTime = dayjs(content.ScheduledTime);
+			const isVideo = content.isVideo === "TRUE";
+			const broadcastStatus = content.broadcastStatus === "TRUE";
+			const beforeNow = scheduleTime.isBefore(now);
+			const type = isVideo
+				? beforeNow
+					? "video"
+					: "scheduled-video"
+				: broadcastStatus
+				? "stream"
+				: beforeNow
+				? "ended-stream"
+				: "scheduled-stream";
+
 			return {
 				title: content.Title ?? "",
 				channelName: content.ChannelName ?? "",
-				scheduledTime: dayjs(content.ScheduledTime).toDate(),
-				broadcastStatus: content?.broadcastStatus === "TRUE",
+				scheduledTime: content.ScheduledTime,
+				broadcastStatus: broadcastStatus,
 				hide: content.Hide === "TRUE",
-				isVideo: content.isVideo === "TRUE",
+				isVideo: isVideo,
 				concurrentViewers: viewers < 0 ? 0 : viewers,
 				videoId: content.VideoId,
 				channelId: content.ChannelId,
 				tag: content.tag,
+				type: type,
 			} as Schedule;
 		});
 	});
