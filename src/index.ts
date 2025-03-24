@@ -15,15 +15,18 @@ import { createServer } from "./router";
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		// const { pathname } = new URL(request.url);
+		const { pathname } = new URL(request.url);
 
-		// const { success } = await env.RATE_LIMITER.limit({ key: pathname });
+		const { success } = await env.RATE_LIMITER.limit({ key: pathname });
 
-		// if (!success) {
-		// 	return new Response(`429 Failure - rate limit exceeded for ${pathname}`, {
-		// 		status: 429,
-		// 	});
-		// }
+		if (!success) {
+			return new Response(
+				`429 Failure - rate limit exceeded for ${pathname}`,
+				{
+					status: 429,
+				}
+			);
+		}
 
 		const server = createServer(env, true);
 
