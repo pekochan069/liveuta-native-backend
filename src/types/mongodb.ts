@@ -22,9 +22,9 @@ export const ChannelDocumentSchema = Schema.Struct({
 	names: Schema.Array(Schema.String),
 	channel_addr: Schema.String,
 	handle_name: Schema.String,
-	createdAt: Schema.String,
+	createdAt: Schema.UndefinedOr(Schema.String),
 	waiting: Schema.Boolean,
-	alive: Schema.Boolean,
+	alive: Schema.UndefinedOr(Schema.Boolean),
 });
 
 export const ChannelSchema = Schema.Struct({
@@ -33,7 +33,6 @@ export const ChannelSchema = Schema.Struct({
 	names: Schema.Array(Schema.String),
 	channelAddr: Schema.String,
 	handleName: Schema.String,
-	createdAt: Schema.String,
 	waiting: Schema.Boolean,
 	alive: Schema.Boolean,
 });

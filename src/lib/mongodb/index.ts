@@ -81,9 +81,11 @@ export function getChannelById(channelId: string) {
 							names: channel.names,
 							channelAddr: channel.channel_addr,
 							handleName: channel.handle_name,
-							createdAt: channel.createdAt,
 							waiting: channel.waiting,
-							alive: channel.alive,
+							alive:
+								channel.alive === undefined
+									? true
+									: channel.alive,
 						}
 				)
 			);
@@ -100,32 +102,28 @@ export function getAllChannels() {
 	return Effect.gen(function* (_) {
 		const mongoDB = yield* MongoDB;
 
-		const channels: Channel[] = yield* mongoDB
-			.use((client) => {
-				return client
+		const channels = yield* mongoDB
+			.use((client) =>
+				client
 					.db(MONGODB_MANAGEMENT_DB)
 					.collection(MONGODB_CHANNEL_COLLECTION)
 					.find<ChannelDocument>(
-						{
-							waiting: false,
-						},
-						{
-							projection: { _id: 0 },
-						}
+						{ waiting: false },
+						{ projection: { _id: 0 } }
 					)
-					.toArray();
-			})
+					.toArray()
+			)
 			.pipe(
 				Effect.map((channels) =>
 					channels.map((channel) => ({
-						channelId: channel.channel_id,
-						nameKor: channel.name_kor,
+						channel_id: channel.channel_id,
+						name_kor: channel.name_kor,
 						names: channel.names,
-						channelAddr: channel.channel_addr,
-						handleName: channel.handle_name,
-						createdAt: channel.createdAt,
+						channel_addr: channel.channel_addr,
+						handle_name: channel.handle_name,
 						waiting: channel.waiting,
-						alive: channel.alive,
+						alive:
+							channel.alive === undefined ? true : channel.alive,
 					}))
 				)
 			);
@@ -178,9 +176,9 @@ export function getChannelsWithYoutubeData(
 						names: channel.names,
 						channelAddr: channel.channel_addr,
 						handleName: channel.handle_name,
-						createdAt: channel.createdAt,
 						waiting: channel.waiting,
-						alive: channel.alive,
+						alive:
+							channel.alive === undefined ? true : channel.alive,
 					}))
 				)
 			);
