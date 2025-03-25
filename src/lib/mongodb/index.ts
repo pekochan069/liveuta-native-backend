@@ -75,7 +75,8 @@ export function getChannelById(channelId: string) {
 			.pipe(
 				Effect.map(
 					(channel) =>
-						channel && {
+						channel &&
+						({
 							channelId: channel.channel_id,
 							nameKor: channel.name_kor,
 							names: channel.names,
@@ -86,7 +87,7 @@ export function getChannelById(channelId: string) {
 								channel.alive === undefined
 									? true
 									: channel.alive,
-						}
+						} as Channel)
 				)
 			);
 
@@ -115,16 +116,21 @@ export function getAllChannels() {
 			)
 			.pipe(
 				Effect.map((channels) =>
-					channels.map((channel) => ({
-						channel_id: channel.channel_id,
-						name_kor: channel.name_kor,
-						names: channel.names,
-						channel_addr: channel.channel_addr,
-						handle_name: channel.handle_name,
-						waiting: channel.waiting,
-						alive:
-							channel.alive === undefined ? true : channel.alive,
-					}))
+					channels.map(
+						(channel) =>
+							({
+								channelId: channel.channel_id,
+								nameKor: channel.name_kor,
+								names: channel.names,
+								channelAddr: channel.channel_addr,
+								handleName: channel.handle_name,
+								waiting: channel.waiting,
+								alive:
+									channel.alive === undefined
+										? true
+										: channel.alive,
+							} as Channel)
+					)
 				)
 			);
 
@@ -170,16 +176,21 @@ export function getChannelsWithYoutubeData(
 			})
 			.pipe(
 				Effect.map((channels) =>
-					channels.map((channel) => ({
-						channelId: channel.channel_id,
-						nameKor: channel.name_kor,
-						names: channel.names,
-						channelAddr: channel.channel_addr,
-						handleName: channel.handle_name,
-						waiting: channel.waiting,
-						alive:
-							channel.alive === undefined ? true : channel.alive,
-					}))
+					channels.map(
+						(channel) =>
+							({
+								channelId: channel.channel_id,
+								nameKor: channel.name_kor,
+								names: channel.names,
+								channelAddr: channel.channel_addr,
+								handleName: channel.handle_name,
+								waiting: channel.waiting,
+								alive:
+									channel.alive === undefined
+										? true
+										: channel.alive,
+							} as Channel)
+					)
 				)
 			);
 
