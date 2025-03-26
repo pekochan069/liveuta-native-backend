@@ -87,6 +87,7 @@ export function getChannelById(channelId: string) {
 								channel.alive === undefined
 									? true
 									: channel.alive,
+							createdAt: channel.createdAt,
 						} as Channel)
 				)
 			);
@@ -108,10 +109,7 @@ export function getAllChannels() {
 				client
 					.db(MONGODB_MANAGEMENT_DB)
 					.collection(MONGODB_CHANNEL_COLLECTION)
-					.find<ChannelDocument>(
-						{ waiting: false },
-						{ projection: { _id: 0 } }
-					)
+					.find({ waiting: false }, { projection: { _id: 0 } })
 					.toArray()
 			)
 			.pipe(
@@ -125,6 +123,7 @@ export function getAllChannels() {
 								channelAddr: channel.channel_addr,
 								handleName: channel.handle_name,
 								waiting: channel.waiting,
+								createdAt: channel.createdAt,
 								alive:
 									channel.alive === undefined
 										? true
@@ -189,6 +188,7 @@ export function getChannelsWithYoutubeData(
 									channel.alive === undefined
 										? true
 										: channel.alive,
+								createdAt: channel.createdAt,
 							} as Channel)
 					)
 				)

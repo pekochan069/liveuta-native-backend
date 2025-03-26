@@ -35,6 +35,7 @@ export const ChannelSchema = Schema.Struct({
 	handleName: Schema.String,
 	waiting: Schema.Boolean,
 	alive: Schema.Boolean,
+	createdAt: Schema.UndefinedOr(Schema.String),
 });
 
 export type ChannelDocument = typeof ChannelDocumentSchema.Type;
