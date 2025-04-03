@@ -253,13 +253,13 @@ export function getSchedule() {
 			const beforeNow = scheduleTime.isBefore(now);
 			const type = isVideo
 				? beforeNow
-					? "video"
-					: "scheduled-video"
+					? 1 // video
+					: 2 // scheduled-video
 				: broadcastStatus
-				? "stream"
+				? 4 // stream
 				: beforeNow
-				? "ended-stream"
-				: "scheduled-stream";
+				? 3 // ended-stream
+				: 5; // scheduled-stream
 
 			return {
 				title: content.Title ?? "",
