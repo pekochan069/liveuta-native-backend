@@ -66,7 +66,7 @@ export type ScheduleDocument = typeof ScheduleDocumentSchema.Type;
 export const ScheduleSchema = Schema.Struct({
 	title: Schema.String,
 	channelName: Schema.String,
-	scheduledTime: Schema.Date,
+	scheduledTime: Schema.String,
 	broadcastStatus: Schema.UndefinedOr(Schema.Boolean),
 	hide: Schema.Boolean,
 	isVideo: Schema.Boolean,
@@ -75,6 +75,6 @@ export const ScheduleSchema = Schema.Struct({
 	channelId: Schema.String,
 	tag: Schema.UndefinedOr(Schema.String),
 	/** 1: video, 2: scheduled-video, 3: ended-stream, 4: stream, 5: scheduled-stream */
-	type: Schema.Literal(1, 2, 3, 4, 5),
+	// type: Schema.Literal(1, 2, 3, 4, 5),
 });
 export type Schedule = typeof ScheduleSchema.Type;

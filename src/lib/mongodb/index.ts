@@ -14,7 +14,6 @@ import type {
 	ScheduleDocument,
 } from "../../types/mongodb";
 import type { ChannelSort } from "../../types/mongodb";
-import dayjs from "../dayjs";
 import { addEscapeCharacter } from "../utils";
 import { combineChannelData } from "../youtube";
 
@@ -239,32 +238,22 @@ export function getSchedule() {
 				.toArray();
 		});
 
-		const now = dayjs();
-
 		return contents.map((content) => {
 			const viewers =
 				typeof content.concurrentViewers === "string"
 					? Number(content.concurrentViewers)
 					: content.concurrentViewers;
 
-			const scheduleTime = dayjs(content.ScheduledTime);
 			const isVideo = content.isVideo === "TRUE";
 			const broadcastStatus = content.broadcastStatus === "TRUE";
-			const beforeNow = scheduleTime.isBefore(now);
-			const type = isVideo
-				? beforeNow
-					? 1 // video
-					: 2 // scheduled-video
-				: broadcastStatus
-				? 4 // stream
-				: beforeNow
-				? 3 // ended-stream
-				: 5; // scheduled-stream
 
 			return {
 				title: content.Title ?? "",
 				channelName: content.ChannelName ?? "",
-				scheduledTime: content.ScheduledTime,
+				scheduledTime: content.ScheduledTime.toISOString().substring(
+					0,
+					19
+				),
 				broadcastStatus: broadcastStatus,
 				hide: content.Hide === "TRUE",
 				isVideo: isVideo,
@@ -272,7 +261,7 @@ export function getSchedule() {
 				videoId: content.VideoId,
 				channelId: content.ChannelId,
 				tag: content.tag,
-				type: type,
+				// type: type,
 			} as Schedule;
 		});
 	});
