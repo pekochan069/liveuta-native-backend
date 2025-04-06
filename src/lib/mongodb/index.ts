@@ -250,10 +250,7 @@ export function getSchedule() {
 			return {
 				title: content.Title ?? "",
 				channelName: content.ChannelName ?? "",
-				scheduledTime: content.ScheduledTime.toISOString().substring(
-					0,
-					19
-				),
+				scheduledTime: content.ScheduledTime.toISOString(),
 				broadcastStatus: broadcastStatus,
 				hide: content.Hide === "TRUE",
 				isVideo: isVideo,
