@@ -136,6 +136,23 @@ export function getAllChannels() {
 	});
 }
 
+export function getChannelsCount() {
+	return Effect.gen(function* (_) {
+		const mongoDB = yield* MongoDB;
+
+		const channelsCount = yield* mongoDB.use((client) =>
+			client
+				.db(MONGODB_MANAGEMENT_DB)
+				.collection(MONGODB_CHANNEL_COLLECTION)
+				.countDocuments({
+					waiting: false,
+				})
+		);
+
+		return channelsCount;
+	});
+}
+
 export function getChannelsWithYoutubeData(
 	sort: ChannelSort,
 	size: number,
