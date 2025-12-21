@@ -1,13 +1,16 @@
 {
-	"typescript.tsdk": "node_modules/typescript/lib",
-	"[typescript][json]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
 	"files.associations": {
 		"wrangler.json": "jsonc"
 	},
-	"editor.codeActionsOnSave": {
-		"source.fixAll.biome": "explicit",
-		"source.organizeImports.biome": "explicit"
+	"typescript.tsdk": "./node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"[typescript]": {
+		"editor.defaultFormatter": "prettier.prettier-vscode"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "prettier.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "prettier.prettier-vscode"
 	}
 }

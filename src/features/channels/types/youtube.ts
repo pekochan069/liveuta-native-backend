@@ -8,6 +8,5 @@ export interface YoutubeChannelData extends youtube_v3.Schema$Channel {
 	uid: string;
 	nameKor: string;
 	url: string;
-	createdAt: string | undefined;
 	alive: boolean;
 }

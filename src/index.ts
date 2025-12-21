@@ -11,25 +11,23 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-import { createServer } from "./router";
+import { Elysia } from "elysia";
+import { CloudflareAdapter } from "elysia/adapter/cloudflare-worker";
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const { pathname } = new URL(request.url);
+import { channelsHttp } from "./features/channels";
+import { scheduleHttp } from "./features/schedule";
+import { effectPlugin } from "./plugins/effect";
 
-		const { success } = await env.RATE_LIMITER.limit({ key: pathname });
-
-		if (!success) {
-			return new Response(
-				`429 Failure - rate limit exceeded for ${pathname}`,
-				{
-					status: 429,
-				}
-			);
-		}
-
-		const server = createServer(env, true);
-
-		return await server.handler(request);
-	},
-} satisfies ExportedHandler<Env>;
+export default new Elysia({
+	adapter: CloudflareAdapter,
+})
+	.onError((e) => {
+		console.log(e.error);
+	})
+	.use(effectPlugin)
+	.use(scheduleHttp)
+	.use(channelsHttp)
+	.get("/", () => {
+		return "Hello, world!";
+	})
+	.compile();

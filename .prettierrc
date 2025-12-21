@@ -1,0 +1,15 @@
+{
+	"importOrder": [
+		"<TYPES>",
+		"<TYPES>^[.]",
+		"",
+		"^(elysia|elysia/(.*)|@elysiajs/(.*))$",
+		"^(effect|effect/(.*)|@effect/(.*))$",
+		"<BUILTIN_MODULES>",
+		"<THIRD_PARTY_MODULES>",
+		"",
+		"^~/(.*)$",
+		"^[.]"
+	],
+	"plugins": ["@ianvs/prettier-plugin-sort-imports"]
+}
