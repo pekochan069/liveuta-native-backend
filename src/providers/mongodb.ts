@@ -4,6 +4,8 @@ import { Context, Effect, Layer } from "effect";
 import { TaggedError } from "effect/Data";
 import { MongoClient } from "mongodb";
 
+import { toSerializableError } from "../lib/error";
+
 export class MongoDBConnectError extends TaggedError("MongoDBConnectError")<{
 	cause?: unknown;
 }> {}
@@ -33,7 +35,8 @@ export function make(uri: string, options?: MongoClientOptions) {
 		const client = yield* Effect.acquireRelease(
 			Effect.tryPromise({
 				try: () => new MongoClient(uri, options).connect(),
-				catch: (cause) => new MongoDBConnectError({ cause }),
+				catch: (cause) =>
+					new MongoDBConnectError({ cause: toSerializableError(cause) }),
 			}),
 			(client) => Effect.promise(() => client.close()),
 		);
@@ -43,13 +46,15 @@ export function make(uri: string, options?: MongoClientOptions) {
 				Effect.gen(function* () {
 					const result = yield* Effect.try({
 						try: () => fn(client),
-						catch: (cause) => new MongoDBConnectError({ cause }),
+						catch: (cause) =>
+							new MongoDBConnectError({ cause: toSerializableError(cause) }),
 					});
 
 					if (result instanceof Promise) {
 						return yield* Effect.tryPromise({
 							try: () => result,
-							catch: (cause) => new MongoDBExecuteError({ cause }),
+							catch: (cause) =>
+								new MongoDBExecuteError({ cause: toSerializableError(cause) }),
 						});
 					}
 
