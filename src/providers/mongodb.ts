@@ -30,7 +30,14 @@ type MongoDBImpl = {
 
 export class MongoDB extends Context.Tag("MongoDB")<MongoDB, MongoDBImpl>() {}
 
-export function make(uri: string, options?: MongoClientOptions) {
+export function make(
+	uri: string,
+	options: MongoClientOptions = {
+		mongodbLogComponentSeverities: {
+			default: "debug",
+		},
+	},
+) {
 	return Effect.gen(function* () {
 		const client = yield* Effect.acquireRelease(
 			Effect.tryPromise({
