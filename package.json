@@ -32,6 +32,6 @@
 		"effect": "^3.19.13",
 		"elysia": "^1.4.19",
 		"googleapis": "^169.0.0",
-		"mongodb": "^7.0.0"
+		"mongodb": "^6.21.0"
 	}
 }
