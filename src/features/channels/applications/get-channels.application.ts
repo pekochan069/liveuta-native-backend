@@ -7,12 +7,9 @@ import { ChannelsRepo } from "../repositories/channels.repo";
 export const getChannelsApplication = Effect.gen(function* () {
 	const repo = yield* ChannelsRepo;
 
-	const raw = yield* repo.getChannels();
+	const raw = yield* repo.getChannels;
 
-	const parsed = yield* validate(
-		DocsToChannelsSchema,
-		"getChannelsApplication",
-	)(raw);
+	const parsed = yield* validate(DocsToChannelsSchema, "getChannelsApplication")(raw);
 
 	return parsed;
 });

@@ -27,7 +27,5 @@ export default new Elysia({
 	.use(effectPlugin)
 	.use(scheduleHttp)
 	.use(channelsHttp)
-	.get("/", () => {
-		return "Hello, world!";
-	})
+	.get("/", () => "liveuta-native-backend")
 	.compile();

@@ -1,0 +1,3 @@
+EXTERNAL_API_URL=https://your-liveuta-api.example
+EXTERNAL_API_KEY=your-api-signing-key
+GOOGLE_API_KEY=your-youtube-data-api-key

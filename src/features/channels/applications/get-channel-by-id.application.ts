@@ -10,10 +10,7 @@ export function getChannelByIdApplication(id: string) {
 
 		const raw = yield* repo.getChannelById(id);
 
-		const parsed = yield* validate(
-			DocToChannelSchema,
-			"getChannelByIdApplication",
-		)(raw);
+		const parsed = yield* validate(DocToChannelSchema, "getChannelByIdApplication")(raw);
 
 		return parsed;
 	});

@@ -1,4 +1,5 @@
 {
+	"$schema": "./node_modules/@effect/tsgo/schema.json",
 	"compilerOptions": {
 		/* Visit https://aka.ms/tsconfig.json to read more about this file */
 
@@ -36,13 +37,7 @@
 
 		/* Skip type checking all .d.ts files. */
 		"skipLibCheck": true,
-		"types": ["./worker-configuration.d.ts"],
-
-		"plugins": [
-			{
-				"name": "@effect/language-service"
-			}
-		]
+		"types": ["./worker-configuration.d.ts", "node"]
 	},
 	"exclude": ["test"],
 	"include": ["worker-configuration.d.ts", "src/**/*.ts"]

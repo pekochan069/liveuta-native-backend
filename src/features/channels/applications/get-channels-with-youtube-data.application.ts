@@ -4,14 +4,9 @@ import { Effect } from "effect";
 
 import { validate } from "../../../lib/effect/validate-schema";
 import { DocsToChannelsSchema } from "../mappers/doc-to-channel.mapper";
-import {
-	ChannelsRepo,
-	ChannelsYoutubeRepo,
-} from "../repositories/channels.repo";
+import { ChannelsRepo, ChannelsYoutubeRepo } from "../repositories/channels.repo";
 
-export function getChannelsWithYoutubeDataApplication(
-	dto: GetPagedChannelsDto,
-) {
+export function getChannelsWithYoutubeDataApplication(dto: GetPagedChannelsDto) {
 	return Effect.gen(function* () {
 		const repo = yield* ChannelsRepo;
 		const youtubeRepo = yield* ChannelsYoutubeRepo;
@@ -21,15 +16,14 @@ export function getChannelsWithYoutubeDataApplication(
 		const parsed = yield* validate(
 			DocsToChannelsSchema,
 			"getChannelsWithYoutubeDataApplication",
-		)(raw);
+		)(raw.data);
 
-		const combinedChannelContents = yield* youtubeRepo.combineChannelData(
-			parsed,
-			{
-				sort: dto.sort,
-			},
-		);
+		const combinedChannelContents = yield* youtubeRepo.combineChannelData(parsed);
 
-		return combinedChannelContents;
+		return {
+			contents: combinedChannelContents,
+			total: raw.meta.total,
+			totalPage: raw.meta.totalPage,
+		};
 	});
 }

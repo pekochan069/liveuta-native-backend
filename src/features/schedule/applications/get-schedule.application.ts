@@ -4,17 +4,15 @@ import { validate } from "../../../lib/effect/validate-schema";
 import { DocToScheduleSchema } from "../mappers/schedule-from-doc.mapper";
 import { ScheduleRepo } from "../repositories/schedule.repo";
 
-export function getSchedule() {
-	return Effect.gen(function* () {
-		const repo = yield* ScheduleRepo;
+export const getSchedule = Effect.gen(function* () {
+	const repo = yield* ScheduleRepo;
 
-		const data = yield* repo.getSchedule();
+	const data = yield* repo.getSchedule;
 
-		const parsed = yield* pipe(
-			data,
-			Effect.forEach(validate(DocToScheduleSchema, "getScheduleApplication")),
-		);
+	const parsed = yield* pipe(
+		data,
+		Effect.forEach(validate(DocToScheduleSchema, "getScheduleApplication")),
+	);
 
-		return parsed;
-	});
-}
+	return parsed;
+});

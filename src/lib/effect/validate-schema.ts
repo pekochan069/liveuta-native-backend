@@ -13,17 +13,15 @@ const defaultParseOptions = {
 	errors: "all",
 } as const;
 
-export function validate<A, I>(
-	schema: Schema.Schema<A, I, never>,
+export function validate<A>(
+	schema: Schema.ConstraintDecoder<A>,
 	where: string,
 	options: ParseOptions = defaultParseOptions,
 ) {
 	return function (input: unknown) {
-		return Schema.decodeUnknown(
+		return Schema.decodeUnknownEffect(
 			schema,
 			options,
-		)(input).pipe(
-			Effect.mapError((cause) => new ValidationError({ where, cause })),
-		);
+		)(input).pipe(Effect.mapError((cause) => new ValidationError({ where, cause })));
 	};
 }

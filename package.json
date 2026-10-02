@@ -7,31 +7,29 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
-		"lint": "eslint src",
-		"lint:fix": "eslint src --fix",
-		"format": "prettier --write .",
-		"cf-typegen": "wrangler types"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.8.19",
-		"@effect/eslint-plugin": "^0.3.2",
-		"@effect/language-service": "^0.62.4",
-		"@eslint/js": "^9.39.2",
-		"@ianvs/prettier-plugin-sort-imports": "^4.7.0",
-		"eslint": "^9.39.2",
-		"eslint-plugin-sort-destructure-keys": "^2.0.0",
-		"jiti": "^2.6.1",
-		"prettier": "^3.7.4",
-		"typescript": "^5.5.2",
-		"typescript-eslint": "^8.50.0",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.56.0"
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
+		"format": "oxfmt --write .",
+		"cf-typegen": "wrangler types",
+		"prepare": "effect-tsgo patch --typescript --oxlint"
 	},
 	"dependencies": {
-		"dayjs": "^1.11.19",
-		"effect": "^3.19.13",
-		"elysia": "^1.4.19",
-		"googleapis": "^169.0.0",
-		"mongodb": "^6.21.0"
+		"dayjs": "^1.11.23",
+		"elysia": "^1.4.30",
+		"googleapis": "^182.0.0"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.22.0",
+		"@effect/tsgo": "0.47.2",
+		"@types/node": "^26.6.4",
+		"effect": "^4.0.0",
+		"jiti": "^2.7.0",
+		"oxfmt": "^0.71.0",
+		"oxlint": "^1.86.0",
+		"oxlint-tsgolint": "7.0.2003",
+		"prettier": "^3.9.9",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.0",
+		"wrangler": "^4.147.0"
 	}
 }

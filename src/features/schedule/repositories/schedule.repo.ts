@@ -1,25 +1,14 @@
 import type { Effect } from "effect";
 import type { ValidationError } from "../../../lib/effect/validate-schema";
-import type {
-	MongoDBConnectError,
-	MongoDBConstructError,
-	MongoDBExecuteError,
-} from "../../../providers/mongodb";
+import type { EndpointError } from "../../../providers/endpoint";
 import type { ScheduleDocument } from "../types/document.type";
 
 import { Context } from "effect";
 
 export type ScheduleRepoImpl = {
-	getSchedule: () => Effect.Effect<
-		Array<ScheduleDocument>,
-		| MongoDBConnectError
-		| MongoDBConstructError
-		| MongoDBExecuteError
-		| ValidationError
-	>;
+	getSchedule: Effect.Effect<Array<ScheduleDocument>, EndpointError | ValidationError>;
 };
 
-export class ScheduleRepo extends Context.Tag("ScheduleRepo")<
-	ScheduleRepo,
-	ScheduleRepoImpl
->() {}
+export class ScheduleRepo extends Context.Service<ScheduleRepo, ScheduleRepoImpl>()(
+	"ScheduleRepo",
+) {}

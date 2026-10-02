@@ -12,10 +12,7 @@ export function getPagedChannelsApplication(dto: GetPagedChannelsDto) {
 
 		const raw = yield* repo.getPagedChannels(dto);
 
-		const parsed = yield* validate(
-			DocsToChannelsSchema,
-			"getPagedChannelsApplication",
-		)(raw);
+		const parsed = yield* validate(DocsToChannelsSchema, "getPagedChannelsApplication")(raw);
 
 		return parsed;
 	});

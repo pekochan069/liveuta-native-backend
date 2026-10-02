@@ -64,41 +64,33 @@ export const channelsHttp = new Elysia({
 			),
 		),
 	)
-	.get(
-		"/getPagedChannels",
-		({ query, runEffect, set }) =>
-			runEffect(
-				getPagedChannelsApplication(query).pipe(
-					Effect.match({
-						onSuccess: (value) => value,
-						onFailure: (error) => {
-							console.error(error);
-							set.status = 500;
-							return { message: error._tag };
-						},
-					}),
-				),
+	.get("/getPagedChannels", ({ query, runEffect, set }) =>
+		runEffect(
+			Schema.decodeUnknownEffect(GetPagedChannelsDtoSchema)(query).pipe(
+				Effect.flatMap(getPagedChannelsApplication),
+				Effect.match({
+					onSuccess: (value) => value,
+					onFailure: (error) => {
+						console.error(error);
+						set.status = error._tag === "SchemaError" ? 422 : 500;
+						return { message: error._tag };
+					},
+				}),
 			),
-		{
-			query: Schema.standardSchemaV1(GetPagedChannelsDtoSchema),
-		},
+		),
 	)
-	.get(
-		"/getYoutube",
-		({ query, runEffect, set }) =>
-			runEffect(
-				getChannelsWithYoutubeDataApplication(query).pipe(
-					Effect.match({
-						onSuccess: (value) => value,
-						onFailure: (error) => {
-							console.error(error);
-							set.status = 500;
-							return { message: error._tag };
-						},
-					}),
-				),
+	.get("/getYoutube", ({ query, runEffect, set }) =>
+		runEffect(
+			Schema.decodeUnknownEffect(GetPagedChannelsDtoSchema)(query).pipe(
+				Effect.flatMap(getChannelsWithYoutubeDataApplication),
+				Effect.match({
+					onSuccess: (value) => value,
+					onFailure: (error) => {
+						console.error(error);
+						set.status = error._tag === "SchemaError" ? 422 : 500;
+						return { message: error._tag };
+					},
+				}),
 			),
-		{
-			query: Schema.standardSchemaV1(GetPagedChannelsDtoSchema),
-		},
+		),
 	);

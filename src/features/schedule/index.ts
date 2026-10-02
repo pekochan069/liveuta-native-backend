@@ -10,7 +10,7 @@ export const scheduleHttp = new Elysia({
 	.use(effectPlugin)
 	.get("/get", ({ runEffect, set }) =>
 		runEffect(
-			getSchedule().pipe(
+			getSchedule.pipe(
 				Effect.match({
 					onSuccess: (value) => value,
 					onFailure: (error) => {

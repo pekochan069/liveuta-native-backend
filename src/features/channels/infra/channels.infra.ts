@@ -1,132 +1,61 @@
 import type { GetPagedChannelsDto } from "../dto/request.dto";
-import type { ChannelDocument } from "../types/mongodb";
 
 import { Effect, Layer, Schema } from "effect";
-import { env } from "cloudflare:workers";
 
 import { validate } from "../../../lib/effect/validate-schema";
-import { MongoDB } from "../../../providers/mongodb";
+import { addEscapeCharacter } from "../../../lib/utils";
+import { Endpoint } from "../../../providers/endpoint";
 import { ChannelNotFoundError } from "../errors/channel.error";
-import { mapGetChannelsWithYoutubeDataQueryParamsToFilter } from "../mappers/query-param-to-filter.mapper";
 import { ChannelsRepo } from "../repositories/channels.repo";
-import { ChannelDocumentSchema } from "../types/mongodb";
+import { ChannelDocumentSchema, ChannelSearchSchema } from "../types/mongodb";
 
 export const ChannelsRepoHttpLayer = Layer.effect(
 	ChannelsRepo,
 	Effect.gen(function* () {
-		const mongoDB = yield* MongoDB;
-
+		const endpoint = yield* Endpoint;
+		const search = (dto: GetPagedChannelsDto) => {
+			const params = new URLSearchParams({
+				page: dto.page.toString(),
+				size: dto.size.toString(),
+				sort: dto.sort,
+				direction: dto.direction
+					? dto.direction === "1"
+						? "asc"
+						: "desc"
+					: dto.sort === "createdAt"
+						? "desc"
+						: "asc",
+			});
+			const query = addEscapeCharacter((dto.query ?? "").trim());
+			if (query) {
+				params.set("query", query);
+				params.set("queryType", "name");
+			}
+			return endpoint
+				.get(`channels/search?${params}`)
+				.pipe(Effect.flatMap(validate(ChannelSearchSchema, "channels/search")));
+		};
 		return ChannelsRepo.of({
-			getChannels: () =>
+			getChannels: endpoint.get("channels").pipe(
+				Effect.flatMap(validate(Schema.Array(ChannelDocumentSchema), "channels")),
+				Effect.map((channels) => channels.filter((channel) => !channel.waiting)),
+			),
+			getPagedChannels: (dto) => search(dto).pipe(Effect.map((result) => result.data)),
+			getChannelsCount: endpoint.get("channels/count").pipe(
+				Effect.flatMap(validate(Schema.Struct({ count: Schema.Finite }), "channels/count")),
+				Effect.map((result) => result.count),
+			),
+			getChannelsWithYoutubeData: search,
+			getChannelById: (id) =>
 				Effect.gen(function* () {
-					const raw = yield* mongoDB.use((client) =>
-						client
-							.db(env.MONGODB_MANAGEMENT_DB)
-							.collection(env.MONGODB_CHANNEL_COLLECTION)
-							.find(
-								{
-									waiting: false,
-								},
-								{
-									projection: { _id: 0 },
-								},
-							)
-							.toArray(),
+					const raw = yield* endpoint.get(`channels/${encodeURIComponent(id)}`).pipe(
+						Effect.catchIf(
+							(error) => error.status === 404,
+							() => Effect.fail(new ChannelNotFoundError()),
+						),
 					);
-
-					const parsed = yield* validate(
-						Schema.Array(ChannelDocumentSchema),
-						"getChannelsRepo",
-					)(raw);
-
-					return parsed;
-				}),
-			getPagedChannels: (dto: GetPagedChannelsDto) =>
-				Effect.gen(function* () {
-					const filter = mapGetChannelsWithYoutubeDataQueryParamsToFilter(dto);
-
-					const raw = yield* mongoDB.use((client) =>
-						client
-							.db(env.MONGODB_MANAGEMENT_DB)
-							.collection(env.MONGODB_CHANNEL_COLLECTION)
-							.find(
-								filter.query ? filter.regexForDBQuery : { waiting: false },
-								{
-									projection: { _id: 0 },
-								},
-							)
-							.sort("name_kor", filter.direction)
-							.skip(filter.skip)
-							.limit(filter.size)
-							.toArray(),
-					);
-
-					const parsed = yield* validate(
-						Schema.Array(ChannelDocumentSchema),
-						"getPagedChannelsRepo",
-					)(raw);
-
-					return parsed;
-				}),
-			getChannelsCount: () =>
-				Effect.gen(function* () {
-					const count = yield* mongoDB.use((client) =>
-						client
-							.db(env.MONGODB_MANAGEMENT_DB)
-							.collection(env.MONGODB_CHANNEL_COLLECTION)
-							.countDocuments({ waiting: false }),
-					);
-
-					return count;
-				}),
-			getChannelsWithYoutubeData: (dto: GetPagedChannelsDto) =>
-				Effect.gen(function* () {
-					const filter = mapGetChannelsWithYoutubeDataQueryParamsToFilter(dto);
-
-					const raw = yield* mongoDB.use((client) =>
-						client
-							.db(env.MONGODB_MANAGEMENT_DB)
-							.collection(env.MONGODB_CHANNEL_COLLECTION)
-							.find<ChannelDocument>(
-								filter.query ? filter.regexForDBQuery : { waiting: false },
-								{
-									projection: { _id: 0 },
-								},
-							)
-							.sort(filter.sort, filter.direction)
-							.skip(filter.skip)
-							.limit(filter.size)
-							.toArray(),
-					);
-
-					const parsed = yield* validate(
-						Schema.Array(ChannelDocumentSchema),
-						"getChannelsWithYoutubeRepo",
-					)(raw);
-
-					return parsed;
-				}),
-			getChannelById: (id: string) =>
-				Effect.gen(function* () {
-					const raw = yield* mongoDB.use((client) =>
-						client
-							.db(env.MONGODB_MANAGEMENT_DB)
-							.collection(env.MONGODB_CHANNEL_COLLECTION)
-							.findOne({
-								channel_id: id,
-							}),
-					);
-
-					if (raw === null) {
-						return yield* Effect.fail(new ChannelNotFoundError());
-					}
-
-					const parsed = yield* validate(
-						ChannelDocumentSchema,
-						"getChannelByIdRepo",
-					)(raw);
-
-					return parsed;
+					if (raw === null) return yield* new ChannelNotFoundError();
+					return yield* validate(ChannelDocumentSchema, "channels/:id")(raw);
 				}),
 		});
 	}),

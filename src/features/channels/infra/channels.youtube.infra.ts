@@ -3,7 +3,6 @@ import type { YoutubeChannelData } from "../types/youtube";
 
 import { Effect, Layer } from "effect";
 
-import { dayjs } from "../../../lib/dayjs";
 import { generateChannelUrl } from "../../../lib/utils";
 import { YoutubePort } from "../../../providers/youtube";
 import { ChannelsYoutubeRepo } from "../repositories/channels.repo";
@@ -14,15 +13,13 @@ export const ChannelsYoutubeRepoLayer = Layer.effect(
 		const youtubePort = yield* YoutubePort;
 
 		return ChannelsYoutubeRepo.of({
-			combineChannelData: (channels, options) =>
+			combineChannelData: (channels) =>
 				Effect.gen(function* () {
-					const channelsRecord = channels.reduce<Record<string, Channel>>(
-						(acc, current) => {
-							acc[current.channelId] = { ...current };
-							return acc;
-						},
-						{},
-					);
+					if (channels.length === 0) return [];
+					const channelsRecord = channels.reduce<Record<string, Channel>>((acc, current) => {
+						acc[current.channelId] = { ...current };
+						return acc;
+					}, {});
 
 					const idArr = Object.keys(channelsRecord);
 
@@ -37,39 +34,36 @@ export const ChannelsYoutubeRepoLayer = Layer.effect(
 						}));
 					}
 
-					const combinedSearchData = youtubeData.items.reduce<
-						Array<YoutubeChannelData>
-					>((acc, current) => {
-						const id = current.id;
+					const combinedSearchData = youtubeData.items.reduce<Array<YoutubeChannelData>>(
+						(acc, current) => {
+							const id = current.id;
 
-						if (!(id && channelsRecord[id])) {
+							if (!(id && channelsRecord[id])) {
+								return acc;
+							}
+
+							const { alive, channelId, nameKor } = channelsRecord[id];
+
+							const youtubeChannelUrl = generateChannelUrl(channelId);
+
+							acc.push({
+								...current,
+								uid: channelId,
+								nameKor,
+								url: youtubeChannelUrl,
+								alive,
+							});
+
 							return acc;
-						}
+						},
+						[],
+					);
 
-						const { alive, channelId, nameKor } = channelsRecord[id];
-
-						const youtubeChannelUrl = generateChannelUrl(channelId);
-
-						acc.push({
-							...current,
-							uid: channelId,
-							nameKor,
-							url: youtubeChannelUrl,
-							alive,
-						});
-
-						return acc;
-					}, []);
-
-					const sortedChannelData = combinedSearchData.sort((a, b) => {
-						if (options?.sort === "createdAt") {
-							return dayjs(b.snippet?.publishedAt).diff(a.snippet?.publishedAt);
-						}
-
-						return a.nameKor.localeCompare(b.nameKor, "ko-KR");
+					const youtubeById = new Map(combinedSearchData.map((channel) => [channel.uid, channel]));
+					return channels.flatMap((channel) => {
+						const data = youtubeById.get(channel.channelId);
+						return data ? [data] : [];
 					});
-
-					return sortedChannelData;
 				}),
 		});
 	}),

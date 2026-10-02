@@ -1,8 +1,5 @@
-import type { youtube_v3 } from "googleapis";
-
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Schema } from "effect";
 import { TaggedError } from "effect/Data";
-import { google } from "googleapis";
 
 import { toSerializableError } from "../lib/error";
 
@@ -13,22 +10,43 @@ export class YoutubeExecuteError extends TaggedError("YoutubeExecuteError")<{
 export type YoutubePortImpl = {
 	getChannels: (
 		ids: Array<string>,
-	) => Effect.Effect<
-		youtube_v3.Schema$ChannelListResponse,
-		YoutubeExecuteError,
-		never
-	>;
+	) => Effect.Effect<typeof YoutubeResponseSchema.Type, YoutubeExecuteError, never>;
 };
 
-export class YoutubePort extends Context.Tag("YoutubePort")<
-	YoutubePort,
-	YoutubePortImpl
->() {}
+export class YoutubePort extends Context.Service<YoutubePort, YoutubePortImpl>()("YoutubePort") {}
 
-function fetcher(input: any) {
-	// CF Worker/Node 모두 기본 fetch로 충분. (Next 옵션 제거 추천)
-	return fetch(input);
-}
+const ThumbnailSchema = Schema.Struct({
+	url: Schema.optional(Schema.String),
+	width: Schema.optional(Schema.Finite),
+	height: Schema.optional(Schema.Finite),
+});
+
+const YoutubeResponseSchema = Schema.Struct({
+	items: Schema.optional(
+		Schema.Array(
+			Schema.Struct({
+				id: Schema.String,
+				snippet: Schema.optional(
+					Schema.Struct({
+						title: Schema.optional(Schema.String),
+						description: Schema.optional(Schema.String),
+						customUrl: Schema.optional(Schema.String),
+						publishedAt: Schema.optional(Schema.String),
+						thumbnails: Schema.optional(Schema.Record(Schema.String, ThumbnailSchema)),
+					}),
+				),
+				statistics: Schema.optional(
+					Schema.Struct({
+						subscriberCount: Schema.optional(Schema.String),
+						videoCount: Schema.optional(Schema.String),
+						viewCount: Schema.optional(Schema.String),
+						hiddenSubscriberCount: Schema.optional(Schema.Boolean),
+					}),
+				),
+			}),
+		),
+	),
+});
 
 export function youtubeLayer(apiKey: string) {
 	return Layer.succeed(
@@ -37,16 +55,26 @@ export function youtubeLayer(apiKey: string) {
 			getChannels: (ids) =>
 				Effect.tryPromise({
 					try: async () => {
-						const client = google.youtube("v3");
-						const res = await client.channels.list(
-							{ id: ids, part: ["id", "snippet", "statistics"], key: apiKey },
-							{ fetchImplementation: fetcher as any },
+						const params = new URLSearchParams({
+							id: ids.join(","),
+							part: "id,snippet,statistics",
+							key: apiKey,
+						});
+						const response = await fetch(
+							`https://youtube.googleapis.com/youtube/v3/channels?${params}`,
+							{ signal: AbortSignal.timeout(10000) },
 						);
-						return res.data;
+						if (!response.ok) throw new Error(`YouTube API returned ${response.status}`);
+						const raw: unknown = await response.json();
+						return raw;
 					},
-					catch: (cause) =>
-						new YoutubeExecuteError({ cause: toSerializableError(cause) }),
-				}),
+					catch: (cause) => new YoutubeExecuteError({ cause: toSerializableError(cause) }),
+				}).pipe(
+					Effect.flatMap(Schema.decodeUnknownEffect(YoutubeResponseSchema)),
+					Effect.mapError((cause) =>
+						cause instanceof YoutubeExecuteError ? cause : new YoutubeExecuteError({ cause }),
+					),
+				),
 		}),
 	);
 }
